@@ -59,12 +59,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let is_perm_slot: bool = needs_perm_slot(polkadot_api, kusama_api, para_id.clone())
         .await
         .unwrap_or(false);
-    // prints just for testing, remove before publishing
-    if is_perm_slot {
-        println!("ParaId: {} needs a permanent slot", para_id.clone());
-    } else {
-        println!("ParaId: {} needs a temporary slot", para_id.clone());
-    }
 
     // Initialise an empty call buffer
     let mut call_buffer: Vec<Call> = Vec::<Call>::new();
@@ -101,8 +95,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Add call to schedule assigning a slot to the given para
     call_buffer.push(create_scheduled_assign_slots_call(para_id.clone(), is_perm_slot).unwrap());
 
-    // Add call to schedule removing the manager lock from the given para
-    call_buffer.push(create_scheduled_remove_lock_call(para_id).unwrap());
+    // Add call to schedule removing the manager lock from the given para only for permanent slots
+    if is_perm_slot {
+        call_buffer.push(create_scheduled_remove_lock_call(para_id).unwrap());
+    }
 
     // Get the batched call based on the calls present in buffer
     let batch_call = create_batch_all_call(call_buffer).unwrap();
